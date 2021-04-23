@@ -10,11 +10,21 @@
 $ npm install --save-dev gulp-awslambda-3
 ```
 
+## Enhancements
+This project is forked from [gulp-awslambda](https://github.com/willyg302/gulp-awslambda) which has not been updated since 2017. The following enhancements were made:
+- Changed to AWS SDK v3 (thus the -3 package name)
+- Converted to async/await
+- Used a modern set of linting rules
+- Made some minor code readability updates that necessitated upgrading the minimum node version and removes some dependencies.
+- Set a new reasonable default for Lambda runtime (nodejs10.x)
+
+The source repository has deprecated dependencies (gulp-util), and dependencies with security vulnerabilities. This fork cleans up these issues.
+
 ## Usage
 
 ### AWS Credentials
 
-It is recommended that you store your AWS Credentials in `~/.aws/credentials` as per [the docs](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html#Credentials_from_the_Shared_Credentials_File_____aws_credentials_).
+It is recommended that you store your AWS Credentials in `~/.aws/credentials` as per [the docs](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).
 
 ### Basic Workflow
 
@@ -22,8 +32,17 @@ gulp-awslambda accepts a single ZIP file, uploads that to AWS Lambda, and passes
 
 ```js
 var gulp   = require('gulp');
-var lambda = require('gulp-awslambda');
+var lambda = require('gulp-awslambda-3');
 var zip    = require('gulp-zip');
+
+const lambdaParams = {
+	FunctionName: 'testGulpAWSLambda',
+	Role: '[YOUR ROLE ARN]', // if creating a new function
+};
+
+const opts = {
+	region: 'us-east-1',
+};
 
 gulp.task('default', function() {
 	return gulp.src('index.js')
@@ -55,14 +74,14 @@ corresponding to the name of an existing Lambda function. In this case gulp-awsl
 
 #### An Object
 
-that is mostly the same as you would pass to [`updateFunctionConfiguration()`](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Lambda.html#updateFunctionConfiguration-property). The only required parameters are `FunctionName` and `Role`. All the other parameters have the following default values:
+that is mostly the same as you would pass to [`UpdateFunctionConfigurationCommand()`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-lambda/classes/updatefunctionconfigurationcommand.html). The only required parameters are `FunctionName` and `Role` (when creating a new function). All the other parameters have the following default values:
 
 - `Handler = 'index.handler'`: This assumes a valid `exports.handler` in `index.js` at the root of your ZIP
-- `Runtime = 'nodejs4.3'`: Also accepts `'nodejs'` and `'nodejs6.10'`
+- `Runtime = 'nodejs10.x'`:
 
-gulp-awslambda will perform an *upsert*, meaning the function will be created if it does not already exist, and updated (both code and configuration) otherwise.
+gulp-awslambda-3 will perform an *upsert*, meaning the function will be created if it does not already exist, and updated (both code and configuration) otherwise.
 
-For code, gulp-awslambda will default to passing the `ZipFile` property. However, you may alternatively pass e.g.:
+For code, gulp-awslambda-3 will default to passing the `ZipFile` property. However, you may alternatively pass e.g.:
 
 ```js
 Code: {
@@ -80,7 +99,7 @@ Options configuring the AWS environment to be used when uploading the function. 
 
 #### `profile`
 
-If you [use a different credentials profile](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html#Using_Profiles_with_the_SDK), you can specify its name with this option.
+If you [use a different credentials profile](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html), you can specify its name with this option.
 
 #### `publish`
 
@@ -105,3 +124,6 @@ Optional text to describe the function's version alias.
 #### `version`
 
 Optional version number to which to assign the alias.  If not specified, the alias will be assigned to the version just published.
+
+# Tests
+Tests were included in the source repository and will be adapted to the new v3 sdk in the near future.
