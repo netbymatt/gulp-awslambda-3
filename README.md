@@ -1,14 +1,13 @@
-# [gulp](https://github.com/gulpjs/gulp)-awslambda
+# [gulp](https://github.com/gulpjs/gulp)-awslambda-3
 
-[![Travis](https://img.shields.io/travis/willyg302/gulp-awslambda.svg?style=flat-square)](https://travis-ci.org/willyg302/gulp-awslambda)
-[![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat-square)](https://raw.githubusercontent.com/willyg302/gulp-awslambda/master/LICENSE)
+[![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat-square)](https://raw.githubusercontent.com/netbymatt/gulp-awslambda-3/master/LICENSE)
 
 > A Gulp plugin for publishing your package to AWS Lambda
 
 ## Install
 
 ```bash
-$ npm install --save-dev gulp-awslambda
+$ npm install --save-dev gulp-awslambda-3
 ```
 
 ## Usage
