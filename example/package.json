@@ -8,9 +8,9 @@
   },
   "author": "",
   "license": "MIT",
-  "devDependencies": {
-    "gulp": "~3.9.1",
-    "gulp-awslambda": "0.5.0",
-    "gulp-zip": "~3.2.0"
+  "dependencies": {
+    "gulp": "^4.0.2",
+    "gulp-awslambda-3": "file:..",
+    "gulp-zip": "^5.1.0"
   }
 }

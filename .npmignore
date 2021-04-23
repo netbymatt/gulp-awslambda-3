@@ -1,0 +1,5 @@
+.vscode
+example
+test
+.travis.yml
+*.tgz

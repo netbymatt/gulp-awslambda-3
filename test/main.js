@@ -2,8 +2,8 @@ const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 
 const gulp = require('gulp');
-const gutil = require('gulp-util');
 const path = require('path');
+const Vinyl = require('vinyl');
 const AWS = require('aws-sdk');
 
 const fixtures = (glob) => path.join(__dirname, 'fixtures', glob);
@@ -11,7 +11,7 @@ const fixtures = (glob) => path.join(__dirname, 'fixtures', glob);
 const mock = (sandbox, args, done, cb) => {
 	const { stream } = args;
 
-	stream.write(new gutil.File({
+	stream.write(new Vinyl({
 		path: fixtures(args.fixture),
 		contents: Buffer.from(args.contents),
 	}));
@@ -52,18 +52,14 @@ const lambdaPlugin = (sandbox, methods = {}) => {
 	};
 };
 
-describe('gulp-awslambda', () => {
-	let sandbox; let
-		log;
+describe('gulp-awslambda-3', () => {
+	let sandbox;
 
 	beforeEach(() => {
 		sandbox = sinon.sandbox.create();
-		log = gutil.log;
-		gutil.log = gutil.noop;
 	});
 
 	afterEach(() => {
-		gutil.log = log;
 		sandbox.restore();
 	});
 

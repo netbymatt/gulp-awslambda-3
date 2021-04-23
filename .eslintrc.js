@@ -1,12 +1,28 @@
 module.exports = {
-	extends: 'eslint:recommended',
+	root: true,
 	env: {
-		'node': true,
+		commonjs: true,
+		node: true,
+		mocha: true,
+	},
+	extends: 'airbnb-base',
+	parserOptions: {
+		ecmaVersion: 2020,
 	},
 	rules: {
-		'indent': [ 2, 'tab' ],
-		'linebreak-style': [ 2, 'unix' ],
-		'quotes': [ 2, 'single' ],
-		'semi': [ 2, 'always' ],
+		'no-tabs': 0,
+		indent: [
+			'error',
+			'tab',
+		],
+		'no-param-reassign': [
+			'error',
+			{
+				props: false,
+			},
+		],
+		'consistent-return': 0,
+		'max-len': 0,
+
 	},
 };

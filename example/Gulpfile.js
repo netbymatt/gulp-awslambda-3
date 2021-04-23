@@ -1,6 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 const gulp = require('gulp');
-const lambda = require('gulp-awslambda');
+const lambda = require('gulp-awslambda-3');
 const zip = require('gulp-zip');
 
 /**
@@ -10,15 +10,15 @@ const zip = require('gulp-zip');
  */
 const lambdaParams = {
 	FunctionName: 'testGulpAWSLambda',
-	Role: '[YOUR LAMBDA EXEC ROLE HERE]',
+	Role: '[YOUR ROLE ARN]',
 };
 
 const opts = {
-	region: 'us-west-2',
+	region: 'us-east-1',
 };
 
 gulp.task('default', () => gulp.src('index.js')
 	.pipe(zip('archive.zip'))
-// .pipe(lambda(lambdaParams, opts))
-	.pipe(lambda('testGulpAWSLambda', opts))
+	.pipe(lambda(lambdaParams, opts))
+	// .pipe(lambda('testGulpAWSLambda', opts))
 	.pipe(gulp.dest('.')));

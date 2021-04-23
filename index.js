@@ -1,97 +1,108 @@
-'use strict';
-var AWS = require('aws-sdk');
-var gutil = require('gulp-util');
-var through = require('through2');
-var extend = require('xtend');
+const {
+	LambdaClient, GetAliasCommand, GetFunctionConfigurationCommand,
+	UpdateFunctionCodeCommand, CreateFunctionCommand, UpdateFunctionConfigurationCommand,
+	CreateAliasCommand, UpdateAliasCommand,
+} = require('@aws-sdk/client-lambda');
+const { fromIni } = require('@aws-sdk/credential-provider-ini');
+const through = require('through2');
+const PluginError = require('plugin-error');
+const log = require('fancy-log');
+const colors = require('ansi-colors');
 
-
-var DEFAULT_OPTS = {
+const DEFAULT_OPTS = {
 	profile: null,
-	region: 'us-east-1'
+	region: 'us-east-1',
 };
 
-var DEFAULT_PARAMS = {
+const DEFAULT_PARAMS = {
 	Handler: 'index.handler',
-	Runtime: 'nodejs4.3'
+	Runtime: 'nodejs10.x',
 };
 
+const makeErr = (message) => new PluginError('gulp-awslambda', message);
 
-var makeErr = function(message) {
-	return new gutil.PluginError('gulp-awslambda', message);
-};
-
-var updateFunctionCode = function(lambda, name, upload, params, opts) {
+const updateFunctionCode = (lambda, name, upload, params, opts) => {
 	delete params.Runtime;
-	var code = params.Code || { ZipFile: upload.contents };
-	return lambda.updateFunctionCode(extend({
-		FunctionName: name
-	}, code, {
-		Publish: opts.publish || false
+	const code = params.Code || { ZipFile: upload.contents };
+	return lambda.send(new UpdateFunctionCodeCommand({
+		FunctionName: name,
+		...code,
+		Publish: opts.publish || false,
 	}));
 };
 
-var createFunction = function(lambda, upload, params, opts) {
+const createFunction = (lambda, upload, params, opts) => {
 	params.Code = params.Code || { ZipFile: upload.contents };
-	return lambda.createFunction(extend(DEFAULT_PARAMS, {
-		Publish: opts.publish || false
-	}, params));
+	return lambda.send(new CreateFunctionCommand({
+		...DEFAULT_PARAMS,
+		Publish: opts.publish || false,
+		...params,
+	}));
 };
 
-var upsertAlias = function(operation, lambda, functionName, functionVersion, alias, aliasDescription) {
-	var params = {
+const upsertAlias = async (operation, lambda, functionName, functionVersion, alias, aliasDesc) => {
+	const params = {
 		FunctionName: functionName,
 		FunctionVersion: functionVersion,
 		Name: alias,
-		Description: aliasDescription
+		Description: aliasDesc,
 	};
-	lambda[operation + 'Alias'](params, function(err) {
-		if (err) {
-			gutil.log('Could not ' + operation + ' alias ' + alias + ':' + err);
-		} else {
-			gutil.log(operation + 'd alias ' + gutil.colors.magenta(alias) + ' for version ' +
-				gutil.colors.magenta(functionVersion));
-		}
-	});
+	// get command
+	let Command = UpdateAliasCommand;
+	if (operation === 'create') Command = CreateAliasCommand;
+	try {
+		await lambda.send(new Command(params));
+		log(`${operation}d alias ${colors.magenta(alias)} for version ${colors.magenta(functionVersion)}`);
+	} catch (err) {
+		log(`Could not ${operation} alias ${alias}:${err}`);
+	}
 };
 
+module.exports = (params, _opts) => {
+	const opts = { ...DEFAULT_OPTS, ..._opts };
 
-module.exports = function(params, opts) {
-	opts = extend(DEFAULT_OPTS, opts);
+	const lambda = new LambdaClient({
+		region: opts.region,
+		credentials: fromIni({ profile: opts.profile || 'default' }),
+	});
 
-	AWS.config.update({ region: opts.region });
-	var lambda = new AWS.Lambda();
-	var toUpload;
-	var functionName = typeof params === 'string' ? params : params.FunctionName;
+	let toUpload;
+	const functionName = typeof params === 'string' ? params : params.FunctionName;
 
-	var updateOrCreateAlias = function(response) {
+	const updateOrCreateAlias = async (response) => {
 		if (opts.publish && opts.alias) {
-			lambda.getAlias({
-				FunctionName: functionName,
-				Name: opts.alias.name
-			}, function(err) {
-				var operation = err ? 'create' : 'update';
-				upsertAlias(operation, lambda, functionName,
+			try {
+				await lambda.send(new GetAliasCommand({
+					FunctionName: functionName,
+					Name: opts.alias.name,
+				}));
+			} catch (err) {
+				const operation = err ? 'create' : 'update';
+				await upsertAlias(operation, lambda, functionName,
 					(opts.alias.version || response.data.Version).toString(),
 					opts.alias.name,
 					opts.alias.description);
-			});
+			}
 		}
-	};
-	var printVersion = function(response) {
-		if (opts.publish) {
-			gutil.log('Publishing Function Version: ' + gutil.colors.magenta(response.data.Version));
-		}
-	};
-	var successfulUpdate = function(response) {
-		printVersion(response);
-		updateOrCreateAlias(response);
-	};
-	var successfulCreation = function(response) {
-		printVersion(response);
-		updateOrCreateAlias(response);
 	};
 
-	var transform = function(file, enc, cb) {
+	const printVersion = (response) => {
+		if (opts.publish) {
+			log(`Publishing Function Version: ${colors.magenta(response.data.Version)}`);
+		}
+	};
+
+	const successfulUpdate = (response) => {
+		printVersion(response);
+		return updateOrCreateAlias(response);
+	};
+
+	const successfulCreation = (response) => {
+		printVersion(response);
+		return updateOrCreateAlias(response);
+	};
+
+	const transform = (file, enc, cb) => {
 		if (file.isNull()) {
 			return cb();
 		}
@@ -104,7 +115,7 @@ module.exports = function(params, opts) {
 		cb();
 	};
 
-	var flush = function(cb) {
+	async function flush(cb) {
 		if (!toUpload && (typeof params === 'string' || !params.Code)) {
 			return cb(makeErr('No code provided'));
 		}
@@ -113,59 +124,71 @@ module.exports = function(params, opts) {
 		}
 		if (opts.alias) {
 			if (!opts.alias.name) {
-				return cb(makeErr('Alias requires a ' + gutil.colors.red('name') + ' parameter'));
-			} else if (!(typeof opts.alias.name === 'string')) {
-				return cb(makeErr('Alias ' + gutil.colors.red('name') + ' must be a string'));
+				return cb(makeErr(`Alias requires a ${colors.red('name')} parameter`));
+			} if (!(typeof opts.alias.name === 'string')) {
+				return cb(makeErr(`Alias ${colors.red('name')} must be a string`));
 			}
 		}
 
-		gutil.log('Uploading Lambda function "' + functionName + '"...');
+		log(`Uploading Lambda function "${functionName}"...`);
 
-		if (opts.profile !== null) {
-			AWS.config.credentials = new AWS.SharedIniFileCredentials({ profile: opts.profile });
-		}
+		const stream = this;
 
-		var stream = this;
-
-		var done = function(err) {
+		const done = (err) => {
 			if (err) {
 				return cb(makeErr(err.message));
 			}
-			gutil.log('Lambda function "' + functionName + '" successfully uploaded');
+			log(`Lambda function "${functionName}" successfully uploaded`);
 			stream.push(toUpload);
 			cb();
 		};
 
 		if (typeof params === 'string') {
 			// Just updating code
-			updateFunctionCode(lambda, params, toUpload, params, opts)
-				.on('success', successfulUpdate)
-				.send(done);
+			try {
+				await updateFunctionCode(lambda, params, toUpload, params, opts);
+				await successfulUpdate();
+				done();
+			} catch (err) {
+				done(err);
+			}
 		} else {
-			lambda.getFunctionConfiguration({
-				FunctionName: params.FunctionName
-			}, function(err) {
-				if (err) {
-					// Creating a function
-					createFunction(lambda, toUpload, params, opts)
-						.on('success', successfulCreation)
-						.send(done);
-				} else {
-					// Updating code + config
-					var runtime = params.Runtime;
-					updateFunctionCode(lambda, params.FunctionName, toUpload, params, opts)
-						.on('success', successfulUpdate)
-						.send(function() {
-							delete params.Code;
-							if (runtime) {
-								params.Runtime = runtime;
-							}
-							lambda.updateFunctionConfiguration(params, done);
-						});
+			try {
+				const existingParams = await lambda.send(new GetFunctionConfigurationCommand({
+					FunctionName: params.FunctionName,
+				}));
+				// combine new parameters with existing
+				const newParams = { ...params, ...existingParams };
+				// remove unneeded paramaters
+				delete newParams.CodeSha256;
+				delete newParams.CodeSize;
+				delete newParams.FunctionArn;
+				delete newParams.LastModified;
+				delete newParams.LastUpdateStatus;
+				delete newParams.LastUpdateStatusReason;
+				delete newParams.LastUpdateStatusCodeReason;
+				delete newParams.RevisionId;
+				delete newParams.Version;
+				try {
+					const result = await updateFunctionCode(lambda, params.FunctionName, toUpload, params, opts);
+					await successfulUpdate(result);
+					await lambda.send(new UpdateFunctionConfigurationCommand(newParams, done));
+					done();
+				} catch (err) {
+					done(err);
 				}
-			});
+			} catch (err) {
+				try {
+					// Creating a function
+					const result = await createFunction(lambda, toUpload, params, opts);
+					successfulCreation(result);
+					done();
+				} catch (err2) {
+					done(err2);
+				}
+			}
 		}
-	};
+	}
 
 	return through.obj(transform, flush);
 };
