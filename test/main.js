@@ -5,7 +5,7 @@ require('should');
 const Vinyl = require('vinyl');
 const {
 	LambdaClient, UpdateFunctionCodeCommand, GetFunctionConfigurationCommand, CreateFunctionCommand,
-	UpdateFunctionConfigurationCommand,
+	UpdateFunctionConfigurationCommand, GetAliasCommand, CreateAliasCommand, UpdateAliasCommand,
 } = require('@aws-sdk/client-lambda');
 const awsLambdaTask = require('..');
 
@@ -132,140 +132,142 @@ describe('gulp-awslambda-3', () => {
 		});
 	});
 
-	// it('should update the function runtime if provided', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox, {
-	// 		getFunctionConfiguration: null,
-	// 		UpdateFunctionCodeCommand: null,
-	// 		updateFunctionConfiguration: null,
-	// 	});
-	// 	mock({
-	// 		stream: awsLambdaTask({ FunctionName: 'bar', Runtime: 'nodejs6.10' }),
-	// 		fixture: 'hello.zip',
-	// 		contents: 'test updateFunctionConfiguration',
-	// 	}, done, () => {
-	// 		mocked.methods.updateFunctionConfiguration.firstCall.args[0].should.eql({
-	// 			FunctionName: 'bar',
-	// 			Runtime: 'nodejs6.10',
-	// 		});
-	// 	});
-	// });
+	it('should update the function runtime if provided', (done) => {
+		lambdaMock
+			.on(GetFunctionConfigurationCommand).resolves()
+			.on(UpdateFunctionConfigurationCommand).resolves()
+			.on(UpdateFunctionCodeCommand)
+			.resolves();
+		mock({
+			stream: awsLambdaTask({ FunctionName: 'bar', Runtime: 'nodejs6.10' }),
+			fixture: 'hello.zip',
+			contents: 'test updateFunctionConfiguration',
+		}, done, () => {
+			lambdaMock.calls()[2].firstArg.should.be.an.instanceOf(UpdateFunctionConfigurationCommand);
+			lambdaMock.calls()[2].firstArg.input.should.eql({
+				FunctionName: 'bar',
+				Runtime: 'nodejs6.10',
+			});
+		});
+	});
 
-	// it('should allow providing code from S3', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox, {
-	// 		getFunctionConfiguration: true, // Cause an error
-	// 		createFunction: null,
-	// 	});
-	// 	mock({
-	// 		stream: awsLambdaTask({
-	// 			FunctionName: 'foo',
-	// 			Code: {
-	// 				S3Bucket: 'myBucket',
-	// 				S3Key: 'function.zip',
-	// 			},
-	// 		}),
-	// 		fixture: 'hello.zip',
-	// 		contents: 'test createFunction',
-	// 	}, done, () => {
-	// 		mocked.methods.createFunction.firstCall.args[0].Code.should.eql({
-	// 			S3Bucket: 'myBucket',
-	// 			S3Key: 'function.zip',
-	// 		});
-	// 	});
-	// });
+	it('should allow providing code from S3', (done) => {
+		lambdaMock
+			.on(GetFunctionConfigurationCommand).resolves(true)
+			.on(CreateFunctionCommand).resolves();
+		mock({
+			stream: awsLambdaTask({
+				FunctionName: 'foo',
+				Code: {
+					S3Bucket: 'myBucket',
+					S3Key: 'function.zip',
+				},
+			}),
+			fixture: 'hello.zip',
+			contents: 'test createFunction',
+		}, done, () => {
+			lambdaMock.calls()[3].firstArg.should.be.an.instanceOf(CreateFunctionCommand);
+			lambdaMock.calls()[3].firstArg.input.Code.should.eql({
+				S3Bucket: 'myBucket',
+				S3Key: 'function.zip',
+			});
+		});
+	});
 
-	// it('should allow publishing for update from a string', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox, {
-	// 		UpdateFunctionCodeCommand: { data: { Version: 1 } },
-	// 	});
-	// 	mock({
-	// 		stream: awsLambdaTask('someFunction', { publish: true }),
-	// 		fixture: 'hello.zip',
-	// 		contents: 'test UpdateFunctionCodeCommand',
-	// 	}, done, () => {
-	// 		mocked.methods.UpdateFunctionCodeCommand.firstCall.args[0].Publish.should.eql(true);
-	// 	});
-	// });
+	it('should allow publishing for update from a string', (done) => {
+		lambdaMock
+			.on(UpdateFunctionCodeCommand).resolves({ data: { Version: 1 } });
+		mock({
+			stream: awsLambdaTask('someFunction', { publish: true }),
+			fixture: 'hello.zip',
+			contents: 'test UpdateFunctionCodeCommand',
+		}, done, () => {
+			lambdaMock.calls()[0].firstArg.should.be.an.instanceOf(UpdateFunctionCodeCommand);
+			lambdaMock.calls()[0].firstArg.input.Publish.should.eql(true);
+		});
+	});
 
-	// it('should favor Publish from params over opts', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox, {
-	// 		getFunctionConfiguration: true, // Cause an error
-	// 		createFunction: null,
-	// 	});
-	// 	mock({
-	// 		stream: awsLambdaTask({
-	// 			FunctionName: 'foo',
-	// 			Publish: true,
-	// 		}, { publish: false }),
-	// 		fixture: 'hello.zip',
-	// 		contents: 'test createFunction',
-	// 	}, done, () => {
-	// 		mocked.methods.createFunction.firstCall.args[0].Publish.should.eql(true);
-	// 	});
-	// });
+	it('should favor Publish from params over opts', (done) => {
+		lambdaMock
+			.on(GetFunctionConfigurationCommand).rejects()
+			.on(CreateFunctionCommand).resolves();
+		mock({
+			stream: awsLambdaTask({
+				FunctionName: 'foo',
+				Publish: true,
+			}, { publish: false }),
+			fixture: 'hello.zip',
+			contents: 'test createFunction',
+		}, done, () => {
+			lambdaMock.calls()[1].firstArg.should.be.an.instanceOf(CreateFunctionCommand);
+			lambdaMock.calls()[1].firstArg.input.Publish.should.eql(true);
+		});
+	});
 
-	// it('should error on alias specified without name', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox);
-	// 	gulp.src(fixtures('hello.zip'), { buffer: true })
-	// 		.pipe(awsLambdaTask('someFunction', { publish: true, alias: {} }))
-	// 		.on('error', (err) => {
-	// 			err.message.should.eql('Alias requires a \u001b[31mname\u001b[39m parameter');
-	// 			done();
-	// 		});
-	// });
+	it('should error on alias specified without name', (done) => {
+		gulp.src(fixtures('hello.zip'), { buffer: true })
+			.pipe(awsLambdaTask('someFunction', { publish: true, alias: {} }))
+			.on('error', (err) => {
+				err.message.should.eql('Alias requires a \u001b[31mname\u001b[39m parameter');
+				done();
+			});
+	});
 
-	// it('should error if specified alias name is not a string', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox);
-	// 	gulp.src(fixtures('hello.zip'), { buffer: true })
-	// 		.pipe(awsLambdaTask('someFunction', { publish: true, alias: { name: 5 } }))
-	// 		.on('error', (err) => {
-	// 			err.message.should.eql('Alias \u001b[31mname\u001b[39m must be a string');
-	// 			done();
-	// 		});
-	// });
+	it('should error if specified alias name is not a string', (done) => {
+		gulp.src(fixtures('hello.zip'), { buffer: true })
+			.pipe(awsLambdaTask('someFunction', { publish: true, alias: { name: 5 } }))
+			.on('error', (err) => {
+				err.message.should.eql('Alias \u001b[31mname\u001b[39m must be a string');
+				done();
+			});
+	});
 
-	// it('should create an alias if necessary', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox, {
-	// 		UpdateFunctionCodeCommand: { data: { Version: 1 } },
-	// 		getAlias: true, // Cause an error
-	// 		createAlias: null,
-	// 	});
-	// 	mock({
-	// 		stream: awsLambdaTask('someFunction', { publish: true, alias: { name: 'alias' } }),
-	// 		fixture: 'hello.zip',
-	// 		contents: 'test UpdateFunctionCodeCommand',
-	// 	}, done, () => {
-	// 		mocked.methods.getAlias.firstCall.args[0].should.eql({
-	// 			FunctionName: 'someFunction',
-	// 			Name: 'alias',
-	// 		});
-	// 		mocked.methods.createAlias.firstCall.args[0].should.eql({
-	// 			FunctionName: 'someFunction',
-	// 			FunctionVersion: '1',
-	// 			Name: 'alias',
-	// 			Description: undefined,
-	// 		});
-	// 	});
-	// });
+	it('should create an alias if necessary', (done) => {
+		lambdaMock
+			.on(UpdateFunctionCodeCommand).resolves({ data: { Version: 1 } })
+			.on(GetAliasCommand).rejects()
+			.on(CreateAliasCommand)
+			.resolves();
+		mock({
+			stream: awsLambdaTask('someFunction', { publish: true, alias: { name: 'alias' } }),
+			fixture: 'hello.zip',
+			contents: 'test UpdateFunctionCodeCommand',
+		}, done, () => {
+			lambdaMock.calls()[1].firstArg.should.be.an.instanceOf(GetAliasCommand);
+			lambdaMock.calls()[1].firstArg.input.should.eql({
+				FunctionName: 'someFunction',
+				Name: 'alias',
+			});
+			lambdaMock.calls()[2].firstArg.should.be.an.instanceOf(CreateAliasCommand);
+			lambdaMock.calls()[2].firstArg.input.should.eql({
+				FunctionName: 'someFunction',
+				FunctionVersion: '1',
+				Name: 'alias',
+				Description: undefined,
+			});
+		});
+	});
 
-	// it('should update an alias if necessary', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox, {
-	// 		UpdateFunctionCodeCommand: { data: { Version: 1 } },
-	// 		getAlias: null,
-	// 		updateAlias: null,
-	// 	});
-	// 	// Also test all alias options
-	// 	const alias = { name: 'alias', description: 'my alias', version: 42 };
-	// 	mock({
-	// 		stream: awsLambdaTask('someFunction', { publish: true, alias }),
-	// 		fixture: 'hello.zip',
-	// 		contents: 'test UpdateFunctionCodeCommand',
-	// 	}, done, () => {
-	// 		mocked.methods.updateAlias.firstCall.args[0].should.eql({
-	// 			FunctionName: 'someFunction',
-	// 			FunctionVersion: '42',
-	// 			Name: 'alias',
-	// 			Description: 'my alias',
-	// 		});
-	// 	});
-	// });
+	it('should update an alias if necessary', (done) => {
+		lambdaMock
+			.on(UpdateFunctionCodeCommand).resolves({ data: { Version: 1 } })
+			.on(GetAliasCommand).resolves()
+			.on(UpdateAliasCommand)
+			.resolves();
+		// Also test all alias options
+		const alias = { name: 'alias', description: 'my alias', version: 42 };
+		mock({
+			stream: awsLambdaTask('someFunction', { publish: true, alias }),
+			fixture: 'hello.zip',
+			contents: 'test UpdateFunctionCodeCommand',
+		}, done, () => {
+			lambdaMock.calls()[2].firstArg.should.be.an.instanceOf(UpdateAliasCommand);
+			lambdaMock.calls()[2].firstArg.input.should.eql({
+				FunctionName: 'someFunction',
+				FunctionVersion: '42',
+				Name: 'alias',
+				Description: 'my alias',
+			});
+		});
+	});
 });

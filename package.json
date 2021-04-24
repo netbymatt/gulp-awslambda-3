@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "eslint index.js && npx nyc mocha",
-		"format": "eslint --fix index.js",
+		"test-only": "npx mocha",
+		"format": "eslint index.js",
+		"format-fix": "eslint --fix index.js",
 		"coverage": "npx nyc mocha"
   },
   "homepage": "https://github.com/netbymatt/gulp-awslambda-3",
