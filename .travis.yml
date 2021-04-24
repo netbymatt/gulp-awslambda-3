@@ -4,7 +4,6 @@ node_js:
   - lts/*
   - 10
   - 12
-  - 14
 before_install:
   - npm i -g npm@7.11.1
 npm_args: --no-optional --no-fund
