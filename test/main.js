@@ -5,6 +5,7 @@ require('should');
 const Vinyl = require('vinyl');
 const {
 	LambdaClient, UpdateFunctionCodeCommand, GetFunctionConfigurationCommand, CreateFunctionCommand,
+	UpdateFunctionConfigurationCommand,
 } = require('@aws-sdk/client-lambda');
 const awsLambdaTask = require('..');
 
