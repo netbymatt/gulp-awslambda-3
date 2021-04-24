@@ -71,13 +71,15 @@ module.exports = (params, _opts) => {
 
 	const updateOrCreateAlias = async (response) => {
 		if (opts.publish && opts.alias) {
+			let operation = 'update';
 			try {
 				await lambda.send(new GetAliasCommand({
 					FunctionName: functionName,
 					Name: opts.alias.name,
 				}));
 			} catch (err) {
-				const operation = err ? 'create' : 'update';
+				operation = 'create';
+			} finally {
 				await upsertAlias(operation, lambda, functionName,
 					(opts.alias.version || response.data.Version).toString(),
 					opts.alias.name,
@@ -146,8 +148,8 @@ module.exports = (params, _opts) => {
 		if (typeof params === 'string') {
 			// Just updating code
 			try {
-				await updateFunctionCode(lambda, params, toUpload, params, opts);
-				await successfulUpdate();
+				const update = await updateFunctionCode(lambda, params, toUpload, params, opts);
+				await successfulUpdate(update);
 				done();
 			} catch (err) {
 				done(err);

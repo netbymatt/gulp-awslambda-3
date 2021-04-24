@@ -126,4 +126,17 @@ Optional text to describe the function's version alias.
 Optional version number to which to assign the alias.  If not specified, the alias will be assigned to the version just published.
 
 # Tests
-Tests were included in the source repository and will be adapted to the new v3 sdk in the near future.
+Run tests, coverage and check eslint formatting
+```javascript
+npm test
+```
+Or run them individually
+```javascript
+npm run test-only
+npm run coverage
+npm run format
+```
+Fix formatting automatically
+```javascript
+npm run format-fix
+```
