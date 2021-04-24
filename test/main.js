@@ -106,28 +106,30 @@ describe('gulp-awslambda-3', () => {
 		});
 	});
 
-	// it('should update the function if it already exists', (done) => {
-	// 	const mocked = lambdaPlugin(sandbox, {
-	// 		getFunctionConfiguration: null,
-	// 		UpdateFunctionCodeCommand: null,
-	// 		updateFunctionConfiguration: null,
-	// 	});
-	// 	mock({
-	// 		stream: awsLambdaTask({ FunctionName: 'bar' }),
-	// 		fixture: 'hello.zip',
-	// 		contents: 'test updateFunctionConfiguration',
-	// 	}, done, (file) => {
-	// 		mocked.methods.getFunctionConfiguration.called.should.eql(true);
-	// 		mocked.methods.UpdateFunctionCodeCommand.firstCall.args[0].should.eql({
-	// 			FunctionName: 'bar',
-	// 			ZipFile: file.contents,
-	// 			Publish: false,
-	// 		});
-	// 		mocked.methods.updateFunctionConfiguration.firstCall.args[0].should.eql({
-	// 			FunctionName: 'bar',
-	// 		});
-	// 	});
-	// });
+	it('should update the function if it already exists', (done) => {
+		lambdaMock
+			.on(GetFunctionConfigurationCommand).resolves()
+			.on(UpdateFunctionConfigurationCommand).resolves()
+			.on(UpdateFunctionCodeCommand)
+			.resolves();
+		mock({
+			stream: awsLambdaTask({ FunctionName: 'bar' }),
+			fixture: 'hello.zip',
+			contents: 'test updateFunctionConfiguration',
+		}, done, (file) => {
+			lambdaMock.calls()[0].firstArg.should.be.an.instanceOf(GetFunctionConfigurationCommand);
+			lambdaMock.calls()[1].firstArg.should.be.an.instanceOf(UpdateFunctionCodeCommand);
+			lambdaMock.calls()[1].firstArg.input.should.eql({
+				FunctionName: 'bar',
+				ZipFile: file.contents,
+				Publish: false,
+			});
+			lambdaMock.calls()[2].firstArg.should.be.an.instanceOf(UpdateFunctionConfigurationCommand);
+			lambdaMock.calls()[2].firstArg.input.should.eql({
+				FunctionName: 'bar',
+			});
+		});
+	});
 
 	// it('should update the function runtime if provided', (done) => {
 	// 	const mocked = lambdaPlugin(sandbox, {
