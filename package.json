@@ -1,14 +1,14 @@
 {
   "name": "gulp-awslambda-3",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A Gulp plugin for publishing your package to AWS Lambda",
   "main": "index.js",
   "scripts": {
     "test": "eslint index.js && npx nyc mocha",
-		"test-only": "npx mocha",
-		"format": "eslint index.js",
-		"format-fix": "eslint --fix index.js",
-		"coverage": "npx nyc mocha"
+    "test-only": "npx mocha",
+    "format": "eslint index.js",
+    "format-fix": "eslint --fix index.js",
+    "coverage": "npx nyc mocha"
   },
   "homepage": "https://github.com/netbymatt/gulp-awslambda-3",
   "repository": {
