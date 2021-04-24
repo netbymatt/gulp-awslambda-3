@@ -1,7 +1,8 @@
 # [gulp](https://github.com/gulpjs/gulp)-awslambda-3
 
+[![Travis](https://travis-ci.com/netbymatt/gulp-awslambda-3.svg)](https://travis-ci.com/netbymatt/gulp-awslambda-3)
+[![Coverage Status](https://coveralls.io/repos/github/netbymatt/gulp-awslambda-3/badge.svg)](https://coveralls.io/github/netbymatt/gulp-awslambda-3)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/netbymatt/gulp-awslambda-3/master/LICENSE)
-[![Travis](https://travis-ci.com/netbymatt/gulp-awslambda-3.svg)]
 
 > A Gulp plugin for publishing your package to AWS Lambda
 
