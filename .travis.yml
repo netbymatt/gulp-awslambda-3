@@ -9,4 +9,4 @@ before_install:
 npm_args: --no-optional --no-fund
 dist: bionic
 os: linux
-after_success: npm run coverage-report
+after_success: f [ ${NV:0:3} == "lts" ] ; then npm run coverage-report; fi
