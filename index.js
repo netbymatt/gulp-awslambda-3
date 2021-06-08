@@ -19,7 +19,7 @@ const DEFAULT_PARAMS = {
 	Runtime: 'nodejs10.x',
 };
 
-const makeErr = (message) => new PluginError('gulp-awslambda', message);
+const makeErr = (message) => new PluginError('gulp-awslambda-3', message);
 
 const updateFunctionCode = (lambda, name, upload, params, opts) => {
 	delete params.Runtime;
