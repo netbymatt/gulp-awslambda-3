@@ -160,17 +160,14 @@ module.exports = (params, _opts) => {
 					FunctionName: params.FunctionName,
 				}));
 				// combine new parameters with existing
-				const newParams = { ...params, ...existingParams };
-				// remove unneeded paramaters
-				delete newParams.CodeSha256;
-				delete newParams.CodeSize;
-				delete newParams.FunctionArn;
-				delete newParams.LastModified;
-				delete newParams.LastUpdateStatus;
-				delete newParams.LastUpdateStatusReason;
-				delete newParams.LastUpdateStatusCodeReason;
-				delete newParams.RevisionId;
-				delete newParams.Version;
+				const newParams = { ...params };
+				newParams.Description = params.Description ?? existingParams.Description;
+				newParams.FunctionName = params.FunctionName ?? existingParams.FunctionName;
+				newParams.Handler = params.Handler ?? existingParams.Handler;
+				newParams.MemorySize = params.MemorySize ?? existingParams.MemorySize;
+				newParams.Role = params.Role ?? existingParams.Role;
+				newParams.Runtime = params.Runtime ?? existingParams.Runtime;
+				newParams.Timeout = params.Timeout ?? existingParams.Timeout;
 				try {
 					const result = await updateFunctionCode(lambda, params.FunctionName, toUpload, params, opts);
 					await successfulUpdate(result);
