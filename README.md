@@ -1,7 +1,5 @@
 # [gulp](https://github.com/gulpjs/gulp)-awslambda-3
 
-[![Travis](https://travis-ci.com/netbymatt/gulp-awslambda-3.svg)](https://travis-ci.com/netbymatt/gulp-awslambda-3)
-[![Coverage Status](https://coveralls.io/repos/github/netbymatt/gulp-awslambda-3/badge.svg)](https://coveralls.io/github/netbymatt/gulp-awslambda-3)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/netbymatt/gulp-awslambda-3/master/LICENSE)
 
 > A Gulp plugin for publishing your package to AWS Lambda
@@ -11,6 +9,17 @@
 ```bash
 $ npm install --save-dev gulp-awslambda-3
 ```
+
+## Function States
+As of October 2021 the AWS Lambda interface has been updated to require querying the Function State before performing an update of function code. See https://docs.aws.amazon.com/lambda/latest/dg/functions-states.html. It's common for this routine to make multiple updating calls to AWS Lambda such as: upload then publish.
+
+As of v1.3.0 this functionality has been added to this module using the following method:
+- An internal function `checkStatus(FunctionName, lambda, count = 10) has been added
+- Before running any Lambda command that would modify the function a call to `checkStatus` is made.
+- Check status will monitor the result of `GetFunctionConfigurationCommand` for `State = 'Active'` and `LastUpdateStatus !== 'InProgress'`.
+- If the state requirements are not met, up to 10 retries at a 1 second interval are tried to allow AWS Lambda to complete it's initialization of the previous update.
+- This function will throw an error if the 10 retires are exhausted or if the Lambda function returns an error state.
+- This function will log `'Waiting for update to complete "${FunctionName}"'` to the console each time a retry situation is encountered.
 
 ## Enhancements
 This project is forked from [gulp-awslambda](https://github.com/willyg302/gulp-awslambda) which has not been updated since 2017. The following enhancements were made:
@@ -128,17 +137,10 @@ Optional text to describe the function's version alias.
 Optional version number to which to assign the alias.  If not specified, the alias will be assigned to the version just published.
 
 # Tests
-Run tests, coverage and check eslint formatting
-```javascript
-npm test
-```
-Or run them individually
-```javascript
-npm run test-only
-npm run coverage
-npm run format
-```
-Fix formatting automatically
-```javascript
-npm run format-fix
+Travis-CI tests have been removed as of v1.4.0. In October 2021 Lambda changed the AWS Lambda API to require the examination of Function States before modifying functions. Because the tests all require connections to Lambda or mocks, I decided that writing new mocks to support these new requirements was too time consuming. Instead I have created a new test folder that provides a script that actually uploads a small function to lambda.
+
+Set the environment variable `GULP_AWSLAMBDA_3_ROLE` to the arn of your lambda execution role before running the following test
+
+``` bash
+GULP_AWSLAMBDA_3_ROLE=<your role arn> node test/index.js
 ```
