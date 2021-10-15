@@ -21,7 +21,33 @@ const DEFAULT_PARAMS = {
 
 const makeErr = (message) => new PluginError('gulp-awslambda-3', message);
 
-const updateFunctionCode = (lambda, name, upload, params, opts) => {
+// get the function configuration and test up to 10 times at 1s intervals for the function to be Active
+const checkStatus = (FunctionName, lambda, count = 10) => new Promise((resolve, reject) => {
+	lambda.send(new GetFunctionConfigurationCommand({
+		FunctionName,
+	})).then((config) => {
+		if (config.State === 'Error') reject(new Error(`${FunctionName} is in error state`));
+		if (count <= 0) reject(new Error(`Ran out of retries waiting for ${FunctionName} to become Active`));
+		if (config.State === 'Active' && config.LastUpdateStatus !== 'InProgress') {
+			resolve(true);
+			return true;
+		}
+		log(`Waiting for update to complete "${FunctionName}"`);
+		// call again in 1 second
+		setTimeout(() => {
+			checkStatus(FunctionName, lambda, count - 1).then((result) => {
+				if (result) {
+					resolve(true);
+				} else {
+					reject();
+				}
+			});
+		}, 1000);
+	});
+});
+
+const updateFunctionCode = async (lambda, name, upload, params, opts) => {
+	await checkStatus(name, lambda);
 	delete params.Runtime;
 	const code = params.Code || { ZipFile: upload.contents };
 	return lambda.send(new UpdateFunctionCodeCommand({
@@ -41,6 +67,7 @@ const createFunction = (lambda, upload, params, opts) => {
 };
 
 const upsertAlias = async (operation, lambda, functionName, functionVersion, alias, aliasDesc) => {
+	await checkStatus(functionName, lambda);
 	const params = {
 		FunctionName: functionName,
 		FunctionVersion: functionVersion,
@@ -161,16 +188,17 @@ module.exports = (params, _opts) => {
 				}));
 				// combine new parameters with existing
 				const newParams = { ...params };
-				newParams.Description = params.Description ?? existingParams.Description;
-				newParams.FunctionName = params.FunctionName ?? existingParams.FunctionName;
-				newParams.Handler = params.Handler ?? existingParams.Handler;
-				newParams.MemorySize = params.MemorySize ?? existingParams.MemorySize;
-				newParams.Role = params.Role ?? existingParams.Role;
-				newParams.Runtime = params.Runtime ?? existingParams.Runtime;
-				newParams.Timeout = params.Timeout ?? existingParams.Timeout;
+				newParams.Description = params.Description ?? existingParams?.Description;
+				newParams.FunctionName = params.FunctionName ?? existingParams?.FunctionName;
+				newParams.Handler = params.Handler ?? existingParams?.Handler;
+				newParams.MemorySize = params.MemorySize ?? existingParams?.MemorySize;
+				newParams.Role = params.Role ?? existingParams?.Role;
+				newParams.Runtime = params.Runtime ?? existingParams?.Runtime;
+				newParams.Timeout = params.Timeout ?? existingParams?.Timeout;
 				try {
 					const result = await updateFunctionCode(lambda, params.FunctionName, toUpload, params, opts);
 					await successfulUpdate(result);
+					await checkStatus(params.FunctionName, lambda);
 					await lambda.send(new UpdateFunctionConfigurationCommand(newParams, done));
 					done();
 				} catch (err) {

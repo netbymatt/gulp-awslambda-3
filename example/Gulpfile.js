@@ -10,7 +10,7 @@ const zip = require('gulp-zip');
  */
 const lambdaParams = {
 	FunctionName: 'testGulpAWSLambda',
-	Role: '[YOUR ROLE ARN]',
+	// Role: '[YOUR ROLE ARN]',
 };
 
 const opts = {
