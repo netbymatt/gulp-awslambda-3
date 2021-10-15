@@ -108,7 +108,7 @@ module.exports = (params, _opts) => {
 				operation = 'create';
 			} finally {
 				await upsertAlias(operation, lambda, functionName,
-					(opts.alias.version || response.data.Version).toString(),
+					(opts.alias.version || response.Version).toString(),
 					opts.alias.name,
 					opts.alias.description);
 			}
@@ -117,7 +117,7 @@ module.exports = (params, _opts) => {
 
 	const printVersion = (response) => {
 		if (opts.publish) {
-			log(`Publishing Function Version: ${colors.magenta(response.data.Version)}`);
+			log(`Publishing Function Version: ${colors.magenta(response.Version)}`);
 		}
 	};
 
