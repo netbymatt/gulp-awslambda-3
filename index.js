@@ -8,6 +8,7 @@ const through = require('through2');
 const PluginError = require('plugin-error');
 const log = require('fancy-log');
 const colors = require('ansi-colors');
+const checkLambdaStatus = require('gulp-awslambda-3-status');
 
 const DEFAULT_OPTS = {
 	profile: null,
@@ -21,33 +22,8 @@ const DEFAULT_PARAMS = {
 
 const makeErr = (message) => new PluginError('gulp-awslambda-3', message);
 
-// get the function configuration and test up to 10 times at 1s intervals for the function to be Active
-const checkStatus = (FunctionName, lambda, count = 10) => new Promise((resolve, reject) => {
-	lambda.send(new GetFunctionConfigurationCommand({
-		FunctionName,
-	})).then((config) => {
-		if (config.State === 'Error') reject(new Error(`${FunctionName} is in error state`));
-		if (count <= 0) reject(new Error(`Ran out of retries waiting for ${FunctionName} to become Active`));
-		if (config.State === 'Active' && config.LastUpdateStatus !== 'InProgress') {
-			resolve(true);
-			return true;
-		}
-		log(`Waiting for update to complete "${FunctionName}"`);
-		// call again in 1 second
-		setTimeout(() => {
-			checkStatus(FunctionName, lambda, count - 1).then((result) => {
-				if (result) {
-					resolve(true);
-				} else {
-					reject();
-				}
-			});
-		}, 1000);
-	});
-});
-
 const updateFunctionCode = async (lambda, name, upload, params, opts) => {
-	await checkStatus(name, lambda);
+	await checkLambdaStatus(name, lambda);
 	delete params.Runtime;
 	const code = params.Code || { ZipFile: upload.contents };
 	return lambda.send(new UpdateFunctionCodeCommand({
@@ -67,7 +43,7 @@ const createFunction = (lambda, upload, params, opts) => {
 };
 
 const upsertAlias = async (operation, lambda, functionName, functionVersion, alias, aliasDesc) => {
-	await checkStatus(functionName, lambda);
+	await checkLambdaStatus(functionName, lambda);
 	const params = {
 		FunctionName: functionName,
 		FunctionVersion: functionVersion,
@@ -107,10 +83,14 @@ module.exports = (params, _opts) => {
 			} catch (err) {
 				operation = 'create';
 			} finally {
-				await upsertAlias(operation, lambda, functionName,
+				await upsertAlias(
+					operation,
+					lambda,
+					functionName,
 					(opts.alias.version || response.Version).toString(),
 					opts.alias.name,
-					opts.alias.description);
+					opts.alias.description,
+				);
 			}
 		}
 	};
@@ -198,7 +178,7 @@ module.exports = (params, _opts) => {
 				try {
 					const result = await updateFunctionCode(lambda, params.FunctionName, toUpload, params, opts);
 					await successfulUpdate(result);
-					await checkStatus(params.FunctionName, lambda);
+					await checkLambdaStatus(params.FunctionName, lambda);
 					await lambda.send(new UpdateFunctionConfigurationCommand(newParams, done));
 					done();
 				} catch (err) {
