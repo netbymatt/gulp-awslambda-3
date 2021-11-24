@@ -1,6 +1,6 @@
 {
   "name": "gulp-awslambda-3",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "A Gulp plugin for publishing your package to AWS Lambda",
   "main": "index.js",
   "scripts": {
