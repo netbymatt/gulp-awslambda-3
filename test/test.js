@@ -10,7 +10,7 @@ const lambdaParams = {
 	Description: 'Test upload from gulp-awslambda-3',
 	MemorySize: 128,
 	Timeout: 10,
-	Architecures: ['arm64'],
+	Architectures: ['arm64'],
 };
 
 // default regions should appear in your aws credentials or environment variables
