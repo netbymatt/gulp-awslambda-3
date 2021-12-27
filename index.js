@@ -177,6 +177,7 @@ module.exports = (params, _opts) => {
 				newParams.Role = params.Role ?? existingParams?.Role;
 				newParams.Runtime = params.Runtime ?? existingParams?.Runtime;
 				newParams.Timeout = params.Timeout ?? existingParams?.Timeout;
+				newParams.Architecures = params.Architecures ?? existingParams?.Architecures;
 				try {
 					const result = await updateFunctionCode(lambda, params.FunctionName, toUpload, params, opts);
 					await successfulUpdate(result);
