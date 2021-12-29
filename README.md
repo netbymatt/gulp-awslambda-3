@@ -14,7 +14,7 @@ $ npm install --save-dev gulp-awslambda-3
 As of October 2021 the AWS Lambda interface has been updated to require querying the Function State before performing an update of function code. See https://docs.aws.amazon.com/lambda/latest/dg/functions-states.html. It's common for this routine to make multiple updating calls to AWS Lambda such as: upload then publish.
 
 As of v1.3.0 this functionality has been added to this module using the following method:
-- An internal function `checkStatus(FunctionName, lambda, count = 10) has been added
+- An internal function `checkStatus(FunctionName, lambda, count = 10)` has been added
 - Before running any Lambda command that would modify the function a call to `checkStatus` is made.
 - Check status will monitor the result of `GetFunctionConfigurationCommand` for `State = 'Active'` and `LastUpdateStatus !== 'InProgress'`.
 - If the state requirements are not met, up to 10 retries at a 1 second interval are tried to allow AWS Lambda to complete it's initialization of the previous update.
