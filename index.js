@@ -14,6 +14,7 @@ const DEFAULT_OPTS = {
 	profile: null,
 	region: 'us-east-1',
 	retryCount: 10,
+	statusVerbose: false,
 };
 
 const DEFAULT_PARAMS = {
@@ -24,7 +25,7 @@ const DEFAULT_PARAMS = {
 const makeErr = (message) => new PluginError('gulp-awslambda-3', message);
 
 const updateFunctionCode = async (lambda, name, upload, params, opts) => {
-	await checkLambdaStatus(name, lambda, opts.retryCount);
+	await checkLambdaStatus(name, lambda, opts.retryCount, opts.statusVerbose);
 	delete params.Runtime;
 	const code = params.Code || { ZipFile: upload.contents };
 	return lambda.send(new UpdateFunctionCodeCommand({
@@ -43,8 +44,8 @@ const createFunction = (lambda, upload, params, opts) => {
 	}));
 };
 
-const upsertAlias = async (operation, lambda, functionName, functionVersion, alias, aliasDesc, retryCount) => {
-	await checkLambdaStatus(functionName, lambda, retryCount);
+const upsertAlias = async (operation, lambda, functionName, functionVersion, alias, aliasDesc, retryCount, statusVerbose) => {
+	await checkLambdaStatus(functionName, lambda, retryCount, statusVerbose);
 	const params = {
 		FunctionName: functionName,
 		FunctionVersion: functionVersion,
@@ -98,6 +99,7 @@ module.exports = (params, _opts) => {
 					opts.alias.name,
 					opts.alias.description,
 					opts.retryCount,
+					opts.statusVerbose,
 				);
 			}
 		}
@@ -187,7 +189,7 @@ module.exports = (params, _opts) => {
 				try {
 					const result = await updateFunctionCode(lambda, params.FunctionName, toUpload, params, opts);
 					await successfulUpdate(result);
-					await checkLambdaStatus(params.FunctionName, lambda, opts.retryCount);
+					await checkLambdaStatus(params.FunctionName, lambda, opts.retryCount, opts.statusVerbose);
 					await lambda.send(new UpdateFunctionConfigurationCommand(newParams, done));
 					done();
 				} catch (err) {

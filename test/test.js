@@ -22,7 +22,8 @@ const opts = {
 		description: 'Production',
 	},
 	profile: 'default',
-	retryCount: 30,
+	retryCount: 5,
+	statusVerbose: false,
 	// region: 'us-east-1',
 };
 

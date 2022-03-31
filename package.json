@@ -31,7 +31,7 @@
     "@aws-sdk/credential-provider-ini": "^3.13.1",
     "ansi-colors": "^4.1.1",
     "fancy-log": "^2.0.0",
-    "gulp-awslambda-3-status": "^1.0.0",
+    "gulp-awslambda-3-status": "^1.1.0",
     "plugin-error": "^1.0.1",
     "through2": "^4.0.2",
     "vinyl": "^2.2.1"

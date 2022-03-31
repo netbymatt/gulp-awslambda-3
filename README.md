@@ -136,9 +136,13 @@ Optional text to describe the function's version alias.
 
 Optional version number to which to assign the alias.  If not specified, the alias will be assigned to the version just published.
 
-#### `retryCount`
+#### `retryCount = 10`
 
 Number of calls to checkStatus that should be made when waiting for a function update to complete. Default = 10. Calls are made at ~1 per second. 10 is reasonable for functions that are not attached to a VPC, 45 is better for functions attached to a VPC.
+
+#### `statusVerbose = false`
+
+When true, log a status message each time the function's status is queried with the time (retires) remaining.
 
 # Tests
 Travis-CI tests have been removed as of v1.4.0. In October 2021 Lambda changed the AWS Lambda API to require the examination of Function States before modifying functions. Because the tests all require connections to Lambda or mocks, I decided that writing new mocks to support these new requirements was too time consuming. Instead I have created a new test folder that provides a script that actually uploads a small function to lambda.
