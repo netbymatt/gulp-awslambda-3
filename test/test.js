@@ -21,6 +21,8 @@ const opts = {
 		name: 'PRODUCTION',
 		description: 'Production',
 	},
+	profile: 'default',
+	retryCount: 30,
 	// region: 'us-east-1',
 };
 

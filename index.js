@@ -65,10 +65,16 @@ const upsertAlias = async (operation, lambda, functionName, functionVersion, ali
 module.exports = (params, _opts) => {
 	const opts = { ...DEFAULT_OPTS, ..._opts };
 
-	const lambda = new LambdaClient({
+	// construct client options
+	const clientOptions = {
 		region: opts.region,
-		credentials: fromIni({ profile: opts.profile || 'default' }),
-	});
+	};
+	// add credentials if profile is provided
+	if (opts.profile !== null) {
+		clientOptions.credentials = fromIni({ profile: opts.profile });
+	}
+
+	const lambda = new LambdaClient(clientOptions);
 
 	let toUpload;
 	const functionName = typeof params === 'string' ? params : params.FunctionName;
