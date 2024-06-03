@@ -14,10 +14,10 @@ $ npm install --save-dev gulp-awslambda-3
 As of October 2021 the AWS Lambda interface has been updated to require querying the Function State before performing an update of function code. See https://docs.aws.amazon.com/lambda/latest/dg/functions-states.html. It's common for this routine to make multiple updating calls to AWS Lambda such as: upload then publish.
 
 As of v1.3.0 this functionality has been added to this module using the following method:
-- An internal function `checkStatus(FunctionName, lambda, count = 10)` has been added
+- use of package `gulp-awslambda-3-status` `checkStatus(FunctionName, lambda, count = 10)` has been added
 - Before running any Lambda command that would modify the function a call to `checkStatus` is made.
 - Check status will monitor the result of `GetFunctionConfigurationCommand` for `State = 'Active'` and `LastUpdateStatus !== 'InProgress'`.
-- If the state requirements are not met, up to 10 retries at a 1 second interval are tried to allow AWS Lambda to complete it's initialization of the previous update.
+- If the state requirements are not met, up to 10 retries (default) at a 1 second interval are tried to allow AWS Lambda to complete it's initialization of the previous update.
 - This function will throw an error if the 10 retires are exhausted or if the Lambda function returns an error state.
 - This function will log `'Waiting for update to complete "${FunctionName}"'` to the console each time a retry situation is encountered.
 
@@ -27,9 +27,15 @@ This project is forked from [gulp-awslambda](https://github.com/willyg302/gulp-a
 - Converted to async/await
 - Used a modern set of linting rules
 - Made some minor code readability updates that necessitated upgrading the minimum node version and removes some dependencies.
-- Set a new reasonable default for Lambda runtime (nodejs10.x)
+- Set a new reasonable default for Lambda runtime (nodejs20.x)
 
 The source repository has deprecated dependencies (gulp-util), and dependencies with security vulnerabilities. This fork cleans up these issues.
+
+## Version 2.0
+The following changes were made
+
+- ES modules. An `import` statement is required to use the package.
+- Test for lambda function ready to receive upload before uploading
 
 ## Usage
 
@@ -56,7 +62,7 @@ const opts = {
 };
 
 gulp.task('default', function() {
-	return gulp.src('index.js')
+	return gulp.src('index.js', { encoding: false })
 		.pipe(zip('archive.zip'))
 		.pipe(lambda(lambda_params, opts))
 		.pipe(gulp.dest('.'));
@@ -67,7 +73,7 @@ For more information on `lambda_params` and `opts` see the [API section](#api).
 
 ### Example Project
 
-See the `example/` directory of this repo for a full working example.
+See the `test/` directory of this repo for a full working example.
 
 ## API
 

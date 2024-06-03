@@ -1,45 +1,44 @@
 {
-  "name": "gulp-awslambda-3",
-  "version": "1.10.1",
-  "description": "A Gulp plugin for publishing your package to AWS Lambda",
-  "main": "index.js",
-  "scripts": {
-    "test": "node test/test.js",
-    "format": "eslint index.js",
-    "format-fix": "eslint --fix index.js"
-  },
-  "homepage": "https://github.com/netbymatt/gulp-awslambda-3",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/netbymatt/gulp-awslambda-3"
-  },
-  "keywords": [
-    "gulpplugin",
-    "aws",
-    "lambda"
-  ],
-  "engines": {
-    "node": ">=10.0.0"
-  },
-  "author": "Matt Walsh",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/netbymatt/gulp-awslambda-3/issues"
-  },
-  "dependencies": {
-    "@aws-sdk/client-lambda": "^3.13.1",
-    "@aws-sdk/credential-provider-ini": "^3.13.1",
-    "ansi-colors": "^4.1.1",
-    "fancy-log": "^2.0.0",
-    "gulp-awslambda-3-status": "^1.1.0",
-    "plugin-error": "^1.0.1",
-    "through2": "^4.0.2",
-    "vinyl": "^2.2.1"
-  },
-  "devDependencies": {
-    "eslint": "^8.3.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.22.1",
-    "gulp": "^4.0.0"
-  }
+	"name": "gulp-awslambda-3",
+	"version": "2.0.0",
+	"description": "A Gulp plugin for publishing your package to AWS Lambda",
+	"main": "index.mjs",
+	"scripts": {
+		"test": "node test/test.mjs",
+		"format": "eslint index.mjs",
+		"format-fix": "eslint --fix index.mjs"
+	},
+	"homepage": "https://github.com/netbymatt/gulp-awslambda-3",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/netbymatt/gulp-awslambda-3"
+	},
+	"keywords": [
+		"gulpplugin",
+		"aws",
+		"lambda"
+	],
+	"engines": {
+		"node": ">=10.0.0"
+	},
+	"author": "Matt Walsh",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/netbymatt/gulp-awslambda-3/issues"
+	},
+	"dependencies": {
+		"@aws-sdk/client-lambda": "^3.13.1",
+		"@aws-sdk/credential-provider-ini": "^3.13.1",
+		"ansi-colors": "^4.1.1",
+		"fancy-log": "^2.0.0",
+		"gulp-awslambda-3-status": "^2.0.0",
+		"plugin-error": "^2.0.1",
+		"through2": "^4.0.2"
+	},
+	"devDependencies": {
+		"eslint": "^8.3.0",
+		"eslint-config-airbnb-base": "^15.0.0",
+		"eslint-plugin-import": "^2.22.1",
+		"gulp": "^5.0.0"
+	}
 }

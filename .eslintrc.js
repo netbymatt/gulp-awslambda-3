@@ -7,7 +7,7 @@ module.exports = {
 	},
 	extends: 'airbnb-base',
 	parserOptions: {
-		ecmaVersion: 2020,
+		ecmaVersion: 2022,
 	},
 	rules: {
 		'no-tabs': 0,
@@ -23,6 +23,12 @@ module.exports = {
 		],
 		'consistent-return': 0,
 		'max-len': 0,
-
+		'import/extensions': [
+			'error',
+			{
+				mjs: 'always',
+				js: 'never',
+			},
+		],
 	},
 };
